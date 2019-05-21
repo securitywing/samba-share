@@ -1,19 +1,29 @@
 #!/bin/bash
-#sudo yum install java-1.8.0-openjdk.x86_64 -y java -version sudo groupadd tomcat sudo 
-mkdir /opt/tomcat 
-sudo useradd -s /bin/nologin -g tomcat -d /opt/tomcat tomcat 
-cd ~ 
-wget http://www-us.apache.org/dist/tomcat/tomcat-8/v8.0.33/bin/apache-tomcat-8.0.33.tar.gz 
-sudo tar -zxvf apache-tomcat-8.0.33.tar.gz -C /opt/tomcat --strip-components=1 
-cd /opt/tomcat 
-sudo chgrp -R tomcat conf 
-sudo chmod g+rwx conf 
-sudo chmod g+r conf/* 
-sudo chown -R tomcat logs/ temp/ webapps/ work/
+yum -y install samba samba-client samba-common
+systemctl start smb
+systemctl enable smb
+useradd sambauser
+mkdir -p /home/share
+chmod -R 0775 /home/share
+chown -R sambauser:sambauser /home/share
 
-sudo chgrp -R tomcat bin 
-sudo chgrp -R tomcat lib 
-sudo chmod g+rwx bin 
-sudo chmod g+r bin/*
+cat >> /etc/samba/smb.conf <<EOL
+[share]
+	comment = sambauser File Server Share
+	path = /home/share
+	browsable =yes
+	writable = yes
+	guest ok = yes
+	read only = no
+	force user = sambauser
+EOL
 
 
+groupadd smbgrp
+usermod sambauser -aG smbgrp
+smbpasswd -a sambauser
+# Type a password
+systemctl restart smb
+
+# Access the folder inside virtual machine
+# \\ip-of-your-virtual-box\share
